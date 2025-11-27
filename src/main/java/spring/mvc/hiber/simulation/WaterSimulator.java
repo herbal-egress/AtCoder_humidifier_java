@@ -5,13 +5,9 @@ import spring.mvc.hiber.domain.InputEvent;
 
 import java.util.List;
 
-/**
- * Класс для симуляции уровня воды - только бизнес-логика протекания и доливов.
- */
-
 @Slf4j
 public class WaterSimulator {
-    // Симулирует уровень воды после всех событий.
+
     public long simulate(List<InputEvent> events) {
         log.info("Начало симуляции для " + (events != null ? events.size() : 0) + " доливов");
         try {
@@ -40,21 +36,38 @@ public class WaterSimulator {
             String errorMsg = "Арифметическая ошибка в симуляции (переполнение)";
             log.error(errorMsg + ": " + e.getMessage());
             throw new IllegalArgumentException(errorMsg, e);
+        } catch (IndexOutOfBoundsException e) {
+            String errorMsg = "Ошибка доступа к событию в списке";
+            log.error(errorMsg + ": " + e.getMessage());
+            throw new IllegalArgumentException(errorMsg, e);
+        } catch (Exception e) {
+            String errorMsg = "Непредвиденная ошибка в симуляции: " + e.getMessage();
+            log.error(errorMsg, e);
+            throw new IllegalArgumentException(errorMsg, e);
         }
     }
 
-    // Валидация возрастаемости доливов.
     private void validateIncreasingTimes(List<InputEvent> events) {
-        long prev = 0;
-        for (int i = 0; i < events.size(); i++) {
-            InputEvent e = events.get(i);
-            if (e.time() <= prev) {
-                String errorMsg = "Не возрастающее событие в индексе " + i;
-                log.warn(errorMsg);
-                throw new IllegalArgumentException(errorMsg);
+        try {
+            long prev = 0;
+            for (int i = 0; i < events.size(); i++) {
+                InputEvent e = events.get(i);
+                if (e.time() <= prev) {
+                    String errorMsg = "Не возрастающее событие в индексе " + i;
+                    log.warn(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
+                prev = e.time();
             }
-            prev = e.time();
+            log.info("Валидация событий прошла успешно. Приступаю к симуляции");
+        } catch (IndexOutOfBoundsException e) {
+            String errorMsg = "Ошибка доступа к событию при валидации";
+            log.error(errorMsg + ": " + e.getMessage());
+            throw new IllegalArgumentException(errorMsg, e);
+        } catch (Exception e) {
+            String errorMsg = "Непредвиденная ошибка в валидации времени: " + e.getMessage();
+            log.error(errorMsg, e);
+            throw new IllegalArgumentException(errorMsg, e);
         }
-        log.info("Валидация событий прошла успешно. Приступаю к симуляции");
     }
 }
