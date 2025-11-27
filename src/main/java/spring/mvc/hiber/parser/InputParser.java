@@ -5,10 +5,6 @@ import spring.mvc.hiber.domain.InputEvent;
 
 import java.util.List;
 
-/**
- * Парсинг входной строки в список событий с валидацией.
- */
-
 @Slf4j
 public class InputParser {
     private static final String LINE_SEPARATOR = "\n";
@@ -44,33 +40,50 @@ public class InputParser {
             String errorMsg = "Ошибка формата числа в входных данных";
             log.error(errorMsg + ": " + e.getMessage());
             throw new IllegalArgumentException(errorMsg, e);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            String errorMsg = "Ошибка доступа к элементу массива в парсинге";
+            log.error(errorMsg + ": " + e.getMessage());
+            throw new IllegalArgumentException(errorMsg, e);
+        } catch (Exception e) {
+            String errorMsg = "Непредвиденная ошибка в парсинге: " + e.getMessage();
+            log.error(errorMsg, e);
+            throw new IllegalArgumentException(errorMsg, e);
         }
     }
 
-    // Вспомогательные методы, парсят события с проверкой возрастаемости.
     private List<InputEvent> parseEvents(String[] lines, int n) {
-        List<InputEvent> events = java.util.stream.IntStream.range(1, n + 1)
-                .mapToObj(i -> parseSingleEvent(lines[i], i))
-                .peek(event -> event.validate())
-                .collect(java.util.stream.Collectors.toList());
-        log.info("Парсинг завершён успешно. Количество доливов N=" + events.size());
-        return events;
+        try {
+            List<InputEvent> events = java.util.stream.IntStream.range(1, n + 1)
+                    .mapToObj(i -> parseSingleEvent(lines[i], i))
+                    .peek(event -> event.validate())
+                    .collect(java.util.stream.Collectors.toList());
+            log.info("Парсинг завершён успешно. Количество доливов N=" + events.size());
+            return events;
+        } catch (Exception e) {
+            String errorMsg = "Ошибка в парсинге событий: " + e.getMessage();
+            log.error(errorMsg, e);
+            throw new IllegalArgumentException(errorMsg, e);
+        }
     }
 
     private InputEvent parseSingleEvent(String line, int index) {
-        String[] parts = line.trim().split(FIELD_SEPARATOR);
-        if (parts.length != 2) {
-            String errorMsg = String.format(INVALID_LINE_MSG, index);
-            log.error(errorMsg);
-            throw new IllegalArgumentException(errorMsg);
-        }
         try {
+            String[] parts = line.trim().split(FIELD_SEPARATOR);
+            if (parts.length != 2) {
+                String errorMsg = String.format(INVALID_LINE_MSG, index);
+                log.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
             long time = Long.parseLong(parts[0].trim());
             long volume = Long.parseLong(parts[1].trim());
             return new InputEvent(time, volume);
         } catch (NumberFormatException e) {
             String errorMsg = String.format("Ошибка формата числа в строке %d", index);
             log.error(errorMsg + ": " + e.getMessage());
+            throw new IllegalArgumentException(errorMsg, e);
+        } catch (Exception e) {
+            String errorMsg = "Непредвиденная ошибка в парсинге события: " + e.getMessage();
+            log.error(errorMsg, e);
             throw new IllegalArgumentException(errorMsg, e);
         }
     }
