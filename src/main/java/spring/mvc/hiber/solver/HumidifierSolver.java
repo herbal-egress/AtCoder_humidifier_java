@@ -7,10 +7,6 @@ import spring.mvc.hiber.simulation.WaterSimulator;
 
 import java.util.List;
 
-/**
- * Оркестратор: собирает парсер и симулятор.
- */
-
 @Slf4j
 public class HumidifierSolver {
     private final InputParser parser;
@@ -21,7 +17,6 @@ public class HumidifierSolver {
         this.simulator = new WaterSimulator();
     }
 
-    // метод парсит исходные данные и симулирует события на их основе.
     public String solve(String inputStr) {
         try {
             List<InputEvent> events = parser.parse(inputStr);
@@ -30,8 +25,17 @@ public class HumidifierSolver {
             log.info("Решение завершено, объём воды в результате доливов=" + result);
             return result;
         } catch (IllegalArgumentException e) {
-            log.error("Ошибка в solve: " + e.getMessage());
-            throw e;
+            String errorMsg = "Ошибка в обработке входных данных или симуляции: " + e.getMessage();
+            log.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg, e);
+        } catch (NullPointerException e) {
+            String errorMsg = "Неожиданный null в данных для решения";
+            log.error(errorMsg + ": " + e.getMessage());
+            throw new IllegalArgumentException(errorMsg, e);
+        } catch (Exception e) {
+            String errorMsg = "Непредвиденная ошибка в solve: " + e.getMessage();
+            log.error(errorMsg, e);
+            throw new IllegalArgumentException(errorMsg, e);
         }
     }
 }
